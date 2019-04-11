@@ -13,7 +13,6 @@ while True:
 		while True:
 			received_audio = clientsocket.recv(1024)
 			if not received_audio:
-				print('erro in audio')
 				break
 			f.write(received_audio)
 	print('audio received')

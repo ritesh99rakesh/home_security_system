@@ -38,7 +38,7 @@ main:
 		BoxLayout:
 			size_hint: [1,.15]
 			GridLayout:
-				cols: 3
+				cols: 5
 				spacing: '10dp'
 				Button:
 					text: 'Close'
@@ -49,6 +49,16 @@ main:
 					text:'Play'
 					bold: True
 					on_press: root.playPause()
+				Button:
+					id: sound
+					text: 'Listen'
+					bold: True
+					on_press: root.soundPlayPause()
+				Button:
+					id: door
+					text: 'Open Door'
+					bold: True
+					on_press: root.openDoor()
 				Button:
 					text: 'Setting'
 					bold: True
@@ -72,8 +82,39 @@ class main(BoxLayout):
 			if self.ids.status.text == "Stop":self.stop()
 			else:
 				self.ids.status.text = "Stop"
-				Clock.schedule_interval(self.recv, 0.1)
-				# Clock.schedule_interval(self.reca, 0.1)
+				Clock.schedule_interval(self.recv, 0.05)
+
+	def soundPlayPause(self):
+		if self.ids.sound.text == "Mute": self.mute_audio()
+		else:
+			self.ids.sound.text = "Mute"
+			Clock.schedule_interval(self.audio, 1)
+
+	def mute_audio(self):
+		self.ids.sound.text = "Listen"
+		Clock.unschedule(self.audio)
+
+	def openDoor(self):
+		if self.ids.door.text == "Close Door": self.close_door()
+		else:
+			self.ids.door.text = "Close Door"
+			self.open_door()
+
+	def close_door(self):
+		self.ids.door.text = "Open Door"
+		clientsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		clientsocket.connect(("192.168.4.1", 5008))
+		clientsocket.send("1".encode('utf-8'))
+		clientsocket.close()
+		print("door closed")
+
+	def open_door(self):
+		clientsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		clientsocket.connect(("192.168.4.1", 5008))
+		clientsocket.send("0".encode('utf-8'))
+		clientsocket.close()
+		print("door opened")
+
 
 	def closePopup(self,btn):
 		self.popup1.dismiss()
@@ -83,46 +124,32 @@ class main(BoxLayout):
 		Clock.unschedule(self.recv)
 
 
+	def audio(self, dt):
+		sound = SoundLoader.load('audio_file.wav')
+		if sound:
+			sound.play()
+
+
+
 	def recv(self, dt):
 		clientsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		clientsocket.connect((self.ipAddress, self.port))
-		choice = clientsocket.recv(1).decode('utf-8')
-		print(choice)
-		choice = int(choice)
-		if choice == 0:
-			clientsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			clientsocket.connect((self.ipAddress, self.port))
-			received_video = []
-			while True:
-				recvd_data = clientsocket.recv(230400)
-				if not recvd_data:
-					print('video finished')
-					break
-				else:
-					received_video.append(recvd_data)
-			dataset_video = b''.join(received_video)
-			print('type:', type(dataset_video))
-			print('dataset size:', len(dataset_video))
-			image = pygame.image.fromstring(dataset_video, (640, 480), "RGB") # convert received image from string
-			pygame.image.save(image, "foo.jpg")
-			print('image saved')
-			self.ids.image_source.reload()
-			print('image received')
-		else:
-			with open('audio_file.wav', 'wb') as f:
-				while True:
-					received_audio = clientsocket.recv(1024)
-					if not received_audio:
-						print('erro in audio')
-						break
-					f.write(received_audio)
-			print('audio received')
-					
-		# if choice == 0:
-		#     dataset_video = b''.join(received)
-		#     image = pygame.image.fromstring(dataset_video, (640, 480), "RGB") # convert received image from string
-		#     pygame.image.save(image, "video_image.jpg")
-		#     self.ids.image_source.reload()
+		received_video = []
+		while True:
+			recvd_data = clientsocket.recv(230400)
+			if not recvd_data:
+				print('video finished')
+				break
+			else:
+				received_video.append(recvd_data)
+		dataset_video = b''.join(received_video)
+		print('type:', type(dataset_video))
+		print('dataset size:', len(dataset_video))
+		image = pygame.image.fromstring(dataset_video, (640, 480), "RGB") # convert received image from string
+		pygame.image.save(image, "foo.jpg")
+		print('image saved')
+		self.ids.image_source.reload()
+		print('image received')
 
 
 	def close(self):
