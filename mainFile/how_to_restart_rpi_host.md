@@ -1,4 +1,4 @@
-Steps to follow to connect to rpi `Team_Excellent`:
+Steps to follow to start rpi wifi:
 * Start terminal in rpi
 * Run the following commands:
   * `sudo systemctl stop dnsmasq`
